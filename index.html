@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Informasi Pembukuan Jahitan</title>
+    <!-- SweetAlert2 untuk notifikasi -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- SheetJS untuk Export Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <!-- html2pdf untuk PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Font Awesome untuk Ikon Logo -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #f0f2f5; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        
+        /* Header dengan Logo dan Judul */
+        .app-header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            border-radius: 20px;
+            padding: 20px 30px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            flex-wrap: wrap;
+        }
+        
+        .logo-container {
+            background: white;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .logo-container i {
+            font-size: 40px;
+            color: #0f3460;
+        }
+        
+        .title-container {
+            flex: 1;
+        }
+        
+        .title-container h1 {
+            color: white;
+            font-size: 28px;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .title-container h1 i {
+            margin-right: 10px;
+            color: #ffd700;
+        }
+        
+        .title-container p {
+            color: #a8c8ff;
+            font-size: 14px;
+            font-style: italic;
+        }
+        
+        .badge {
+            background: rgba(255,255,255,0.2);
+            border-radius: 30px;
+            padding: 8px 18px;
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .badge i {
+            margin-right: 5px;
+        }
+        
+        /* Dashboard Menu Navigasi */
+        .dashboard {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .menu-nav {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .menu-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .menu-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .menu-btn.active {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        
+        .page {
+            display: none;
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .page.active-page {
+            display: block;
+        }
+        
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+            border-left: 5px solid #667eea;
+            padding-left: 15px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-group label {
+            width: 180px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .form-group input, .form-group select, .form-group textarea {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .form-group input[readonly] {
+            background-color: #e9ecef;
+            cursor: default;
+        }
+        
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .button-group {
+            margin: 20px 0;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        
+        .btn-simpan { background: #28a745; color: white; }
+        .btn-edit { background: #ffc107; color: black; }
+        .btn-hapus { background: #dc3545; color: white; }
+        .btn-reset { background: #6c757d; color: white; }
+        .btn-pdf { background: #e63946; color: white; }
+        .btn-excel { background: #2ecc71; color: white; }
+        
+        button:hover {
+            opacity: 0.85;
+            transform: scale(1.02);
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin-top: 25px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            font-size: 14px;
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+        }
+        
+        .aksi-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin: 2px;
+            cursor: pointer;
+        }
+        
+        .aksi-btn.hapus-btn {
+            background: #e74c3c;
+        }
+        
+        .total-info {
+            background: #e8f5e9;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-weight: bold;
+            color: #2e7d32;
+        }
+        
+        .auto-field {
+            background: #e9f5e9;
+            font-weight: bold;
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 12px;
+            border-top: 1px solid #ddd;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- HEADER dengan LOGO dan JUDUL BESAR -->
+    <div class="app-header">
+        <div class="logo-container">
+            <i class="fas fa-tshirt"></i>
+        </div>
+        <div class="title-container">
+            <h1>
+                <i class="fas fa-book"></i> 
+                SISTEM INFORMASI PEMBUKUAN JAHITAN
+            </h1>
+            <p><i class="fas fa-chart-line"></i> Aplikasi Pembukuan Keuangan | Kas Masuk & Kas Keluar | Laporan Laba Rugi</p>
+        </div>
+        <div class="badge">
+            <i class="fas fa-calendar-alt"></i> 
+            <span id="currentDate"></span>
+        </div>
+    </div>
+
+    <!-- Dashboard Menu Navigasi -->
+    <div class="dashboard">
+        <div class="menu-nav">
+            <button class="menu-btn active" data-page="page1"><i class="fas fa-money-bill-wave"></i> 📥 Kas Pemasukan</button>
+            <button class="menu-btn" data-page="page2"><i class="fas fa-tools"></i> ⚙️ Kas Operasional</button>
+            <button class="menu-btn" data-page="page4"><i class="fas fa-users"></i> 👥 Gaji Karyawan</button>
+            <button class="menu-btn" data-page="page3"><i class="fas fa-chart-bar"></i> 📊 Laporan Laba Rugi</button>
+        </div>
+    </div>
+
+    <!-- HALAMAN 1 : KAS PEMASUKAN -->
+    <div id="page1" class="page active-page">
+        <h2><i class="fas fa-money-bill-wave"></i> Kas Pemasukan (Jahitan)</h2>
+        <form id="formPemasukan">
+            <div class="form-row">
+                <div class="form-group"><label>Tanggal :</label><input type="date" id="tglPemasukan" required></div>
+                <div class="form-group"><label>Nama Customer :</label><input type="text" id="namaCustomer" placeholder="Nama Customer" required></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Jenis Baju :</label><select id="jenisBaju"><option value="Bordir">Bordir</option><option value="Payet">Payet</option></select></div>
+                <div class="form-group"><label>Metode Pembayaran :</label><select id="metodeBayar"><option value="Cash">Cash</option><option value="Transfer">Transfer</option></select></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Total (Rp) :</label><input type="number" id="totalPemasukan" placeholder="0" required></div>
+                <div class="form-group"><label>Keterangan :</label><textarea id="keteranganPemasukan" rows="2" placeholder="Opsional"></textarea></div>
+            </div>
+            <div class="button-group">
+                <button type="button" class="btn-simpan" id="simpanPemasukan"><i class="fas fa-save"></i> 💾 Simpan</button>
+                <button type="button" class="btn-edit" id="editPemasukan"><i class="fas fa-edit"></i> ✏️ Edit</button>
+                <button type="button" class="btn-hapus" id="hapusPemasukan"><i class="fas fa-trash"></i> 🗑️ Hapus</button>
+                <button type="button" class="btn-reset" id="resetPemasukan"><i class="fas fa-undo"></i> 🔄 Reset</button>
+            </div>
+        </form>
+        <div class="table-container">
+            <table id="tabelPemasukan">
+                <thead><tr><th>No</th><th>Tanggal</th><th>Nama Customer</th><th>Jenis Baju</th><th>Pembayaran</th><th>Total</th><th>Keterangan</th><th>Aksi</th></tr></thead>
+                <tbody id="bodyPemasukan"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- HALAMAN 2 : KAS OPERASIONAL -->
+    <div id="page2" class="page">
+        <h2><i class="fas fa-tools"></i> Kas Operasional</h2>
+        <form id="formOperasional">
+            <div class="form-row">
+                <div class="form-group"><label>Tanggal :</label><input type="date" id="tglOperasional" required></div>
+                <div class="form-group"><label>Jenis Barang :</label><input type="text" id="jenisBarang" placeholder="Contoh: Benang, Jarum, Kain" required></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Jumlah :</label><input type="number" id="jumlahBarang" placeholder="Jumlah" required></div>
+                <div class="form-group"><label>Total (Rp) :</label><input type="number" id="totalOperasional" placeholder="Total Harga" required></div>
+            </div>
+            <div class="button-group">
+                <button type="button" class="btn-simpan" id="simpanOperasional"><i class="fas fa-save"></i> 💾 Simpan</button>
+                <button type="button" class="btn-edit" id="editOperasional"><i class="fas fa-edit"></i> ✏️ Edit</button>
+                <button type="button" class="btn-hapus" id="hapusOperasional"><i class="fas fa-trash"></i> 🗑️ Hapus</button>
+                <button type="button" class="btn-reset" id="resetOperasional"><i class="fas fa-undo"></i> 🔄 Reset</button>
+            </div>
+        </form>
+        <div class="table-container">
+            <table id="tabelOperasional">
+                <thead><tr><th>No</th><th>Tanggal</th><th>Jenis Barang</th><th>Jumlah</th><th>Total</th><th>Aksi</th></tr></thead>
+                <tbody id="bodyOperasional"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- HALAMAN 3 : GAJI KARYAWAN -->
+    <div id="page4" class="page">
+        <h2><i class="fas fa-users"></i> Gaji Karyawan</h2>
+        <form id="formGaji">
+            <div class="form-row">
+                <div class="form-group"><label>Tanggal :</label><input type="date" id="tglGaji" required></div>
+                <div class="form-group"><label>Nama Karyawan :</label><input type="text" id="namaKaryawan" placeholder="Nama Karyawan" required></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Jenis Pekerjaan :</label><input type="text" id="jenisPekerjaan" placeholder="Contoh: Penjahit, Admin" required></div>
+                <div class="form-group"><label>Total Gaji (Rp) :</label><input type="number" id="totalGaji" placeholder="0" required></div>
+            </div>
+            <div class="button-group">
+                <button type="button" class="btn-simpan" id="simpanGaji"><i class="fas fa-save"></i> 💾 Simpan</button>
+                <button type="button" class="btn-edit" id="editGaji"><i class="fas fa-edit"></i> ✏️ Edit</button>
+                <button type="button" class="btn-hapus" id="hapusGaji"><i class="fas fa-trash"></i> 🗑️ Hapus</button>
+                <button type="button" class="btn-reset" id="resetGaji"><i class="fas fa-undo"></i> 🔄 Reset</button>
+            </div>
+        </form>
+        <div class="table-container">
+            <table id="tabelGaji">
+                <thead><tr><th>No</th><th>Tanggal</th><th>Nama Karyawan</th><th>Jenis Pekerjaan</th><th>Total Gaji</th><th>Aksi</th></tr></thead>
+                <tbody id="bodyGaji"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- HALAMAN 4 : LAPORAN LABA RUGI -->
+    <div id="page3" class="page">
+        <h2><i class="fas fa-chart-line"></i> Laporan Laba Rugi</h2>
+        <form id="formLabaRugi">
+            <div class="form-row">
+                <div class="form-group"><label>Tanggal :</label><input type="date" id="tglLaporan" required></div>
+                <div class="form-group"><label>Pemasukan Jahitan (Rp) :</label><input type="number" id="pemasukanJahitan" readonly class="auto-field"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Pengeluaran Operasional (Rp) :</label><input type="number" id="pengeluaranOperasional" readonly class="auto-field"></div>
+                <div class="form-group"><label>Gaji Karyawan (Rp) :</label><input type="number" id="gajiKaryawan" readonly class="auto-field"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Total Laba Bersih :</label><input type="text" id="labaBersih" readonly style="background:#d4edda; font-weight:bold"></div>
+                <div class="form-group"><label>Keterangan :</label><textarea id="keteranganLaba" rows="2" placeholder="Catatan laba rugi"></textarea></div>
+            </div>
+            <div class="button-group">
+                <button type="button" class="btn-simpan" id="simpanLaba"><i class="fas fa-save"></i> 💾 Simpan Laporan</button>
+                <button type="button" class="btn-pdf" id="cetakPDF"><i class="fas fa-file-pdf"></i> 📄 Cetak PDF</button>
+                <button type="button" class="btn-excel" id="exportExcel"><i class="fas fa-file-excel"></i> 📎 Export Excel</button>
+            </div>
+        </form>
+        <div class="total-info">
+            <i class="fas fa-info-circle"></i> 💡 Informasi: Pemasukan dari Kas Pemasukan | Operasional dari Kas Operasional | Gaji dari Data Gaji Karyawan
+        </div>
+        <div class="table-container">
+            <table id="tabelLabaRugi">
+                <thead><tr><th>No</th><th>Tanggal</th><th>Pemasukan</th><th>Operasional</th><th>Gaji</th><th>Laba Bersih</th><th>Keterangan</th></tr></thead>
+                <tbody id="bodyLabaRugi"></tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- FOOTER -->
+    <div class="footer">
+        <i class="fas fa-copyright"></i> 2024 Sistem Informasi Pembukuan Jahitan | Dibangun dengan <i class="fas fa-heart" style="color: #e74c3c;"></i> untuk kemudahan pembukuan
+    </div>
+</div>
+
+<script>
+    // ========== SET TANGGAL CURRENT ==========
+    function updateCurrentDate() {
+        let today = new Date();
+        let options = { year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('currentDate').innerHTML = today.toLocaleDateString('id-ID', options);
+    }
+    updateCurrentDate();
+
+    // ========== DATA STORAGE ==========
+    let dataPemasukan = JSON.parse(localStorage.getItem('dataPemasukan')) || [];
+    let dataOperasional = JSON.parse(localStorage.getItem('dataOperasional')) || [];
+    let dataGaji = JSON.parse(localStorage.getItem('dataGaji')) || [];
+    let dataLabaRugi = JSON.parse(localStorage.getItem('dataLabaRugi')) || [];
+
+    // Variabel edit
+    let editIdPemasukan = null;
+    let editIdOperasional = null;
+    let editIdGaji = null;
+
+    // ========== FUNGSI TOTAL OTOMATIS ==========
+    function getTotalPemasukan() {
+        let total = 0;
+        for (let item of dataPemasukan) total += parseFloat(item.total) || 0;
+        return total;
+    }
+
+    function getTotalOperasional() {
+        let total = 0;
+        for (let item of dataOperasional) total += parseFloat(item.total) || 0;
+        return total;
+    }
+
+    function getTotalGaji() {
+        let total = 0;
+        for (let item of dataGaji) total += parseFloat(item.totalGaji) || 0;
+        return total;
+    }
+
+    function updateLabaRugiOtomatis() {
+        document.getElementById('pemasukanJahitan').value = getTotalPemasukan();
+        document.getElementById('pengeluaranOperasional').value = getTotalOperasional();
+        document.getElementById('gajiKaryawan').value = getTotalGaji();
+        hitungLabaBersih();
+    }
+
+    function hitungLabaBersih() {
+        let pemasukan = parseFloat(document.getElementById('pemasukanJahitan').value) || 0;
+        let operasional = parseFloat(document.getElementById('pengeluaranOperasional').value) || 0;
+        let gaji = parseFloat(document.getElementById('gajiKaryawan').value) || 0;
+        let laba = pemasukan - operasional - gaji;
+        if (laba < 0) {
+            document.getElementById('labaBersih').value = `(${Math.abs(laba).toLocaleString('id-ID')}) / Rugi`;
+        } else {
+            document.getElementById('labaBersih').value = laba.toLocaleString('id-ID');
+        }
+        return laba;
+    }
+
+    // ========== RENDER TABEL ==========
+    function renderPemasukan() {
+        let tbody = document.getElementById('bodyPemasukan');
+        tbody.innerHTML = '';
+        dataPemasukan.forEach((item, idx) => {
+            tbody.innerHTML += `<tr>
+                <td>${idx+1}</td>
+                <td>${item.tanggal}</td>
+                <td>${item.namaCustomer}</td>
+                <td>${item.jenisBaju}</td>
+                <td>${item.pembayaran}</td>
+                <td>${Number(item.total).toLocaleString('id-ID')}</td>
+                <td>${item.keterangan || '-'}</td>
+                <td><button class="aksi-btn" onclick="editPemasukanRow(${idx})"><i class="fas fa-edit"></i> Edit</button>
+                <button class="aksi-btn hapus-btn" onclick="hapusPemasukanRow(${idx})"><i class="fas fa-trash"></i> Hapus</button></td>
+            </tr>`;
+        });
+        localStorage.setItem('dataPemasukan', JSON.stringify(dataPemasukan));
+        updateLabaRugiOtomatis();
+    }
+
+    function renderOperasional() {
+        let tbody = document.getElementById('bodyOperasional');
+        tbody.innerHTML = '';
+        dataOperasional.forEach((item, idx) => {
+            tbody.innerHTML += `<tr>
+                <td>${idx+1}</td>
+                <td>${item.tanggal}</td>
+                <td>${item.jenisBarang}</td>
+                <td>${item.jumlah}</td>
+                <td>${Number(item.total).toLocaleString('id-ID')}</td>
+                <td><button class="aksi-btn" onclick="editOperasionalRow(${idx})"><i class="fas fa-edit"></i> Edit</button>
+                <button class="aksi-btn hapus-btn" onclick="hapusOperasionalRow(${idx})"><i class="fas fa-trash"></i> Hapus</button></td>
+            </tr>`;
+        });
+        localStorage.setItem('dataOperasional', JSON.stringify(dataOperasional));
+        updateLabaRugiOtomatis();
+    }
+
+    function renderGaji() {
+        let tbody = document.getElementById('bodyGaji');
+        tbody.innerHTML = '';
+        dataGaji.forEach((item, idx) => {
+            tbody.innerHTML += `<tr>
+                <td>${idx+1}</td>
+                <td>${item.tanggal}</td>
+                <td>${item.namaKaryawan}</td>
+                <td>${item.jenisPekerjaan}</td>
+                <td>${Number(item.totalGaji).toLocaleString('id-ID')}</td>
+                <td><button class="aksi-btn" onclick="editGajiRow(${idx})"><i class="fas fa-edit"></i> Edit</button>
+                <button class="aksi-btn hapus-btn" onclick="hapusGajiRow(${idx})"><i class="fas fa-trash"></i> Hapus</button></td>
+            </tr>`;
+        });
+        localStorage.setItem('dataGaji', JSON.stringify(dataGaji));
+        updateLabaRugiOtomatis();
+    }
+
+    function renderLabaRugi() {
+        let tbody = document.getElementById('bodyLabaRugi');
+        tbody.innerHTML = '';
+        dataLabaRugi.forEach((item, idx) => {
+            let labaTampil = item.labaBersih < 0 ? `(${Math.abs(item.labaBersih).toLocaleString('id-ID')})` : item.labaBersih.toLocaleString('id-ID');
+            tbody.innerHTML += `<tr>
+                <td>${idx+1}</td>
+                <td>${item.tanggal}</td>
+                <td>${Number(item.pemasukan).toLocaleString('id-ID')}</td>
+                <td>${Number(item.operasional).toLocaleString('id-ID')}</td>
+                <td>${Number(item.gaji).toLocaleString('id-ID')}</td>
+                <td style="font-weight:bold;background:#e8f5e9">${labaTampil}</td>
+                <td>${item.keterangan || '-'}</td>
+            </tr>`;
+        });
+        localStorage.setItem('dataLabaRugi', JSON.stringify(dataLabaRugi));
+    }
+
+    // ========== RESET FORM ==========
+    function resetFormPemasukan() {
+        document.getElementById('tglPemasukan').value = new Date().toISOString().split('T')[0];
+        document.getElementById('namaCustomer').value = '';
+        document.getElementById('jenisBaju').value = 'Bordir';
+        document.getElementById('metodeBayar').value = 'Cash';
+        document.getElementById('totalPemasukan').value = '';
+        document.getElementById('keteranganPemasukan').value = '';
+        editIdPemasukan = null;
+    }
+
+    function resetFormOperasional() {
+        document.getElementById('tglOperasional').value = new Date().toISOString().split('T')[0];
+        document.getElementById('jenisBarang').value = '';
+        document.getElementById('jumlahBarang').value = '';
+        document.getElementById('totalOperasional').value = '';
+        editIdOperasional = null;
+    }
+
+    function resetFormGaji() {
+        document.getElementById('tglGaji').value = new Date().toISOString().split('T')[0];
+        document.getElementById('namaKaryawan').value = '';
+        document.getElementById('jenisPekerjaan').value = '';
+        document.getElementById('totalGaji').value = '';
+        editIdGaji = null;
+    }
+
+    // ========== EVENT PEMASUKAN ==========
+    document.getElementById('simpanPemasukan').addEventListener('click', () => {
+        let tanggal = document.getElementById('tglPemasukan').value;
+        let namaCustomer = document.getElementById('namaCustomer').value.trim();
+        let jenisBaju = document.getElementById('jenisBaju').value;
+        let metodeBayar = document.getElementById('metodeBayar').value;
+        let total = parseFloat(document.getElementById('totalPemasukan').value);
+        let keterangan = document.getElementById('keteranganPemasukan').value;
+
+        if(!tanggal || !namaCustomer || isNaN(total) || total <= 0){
+            Swal.fire('Error', 'Lengkapi data dengan benar', 'error');
+            return;
+        }
+
+        if(editIdPemasukan !== null){
+            dataPemasukan[editIdPemasukan] = { tanggal, namaCustomer, jenisBaju, pembayaran: metodeBayar, total, keterangan };
+            editIdPemasukan = null;
+            Swal.fire('Berhasil', 'Data pemasukan diupdate', 'success');
+        } else {
+            dataPemasukan.push({ tanggal, namaCustomer, jenisBaju, pembayaran: metodeBayar, total, keterangan });
+            Swal.fire('Berhasil', 'Data pemasukan tersimpan', 'success');
+        }
+        renderPemasukan();
+        resetFormPemasukan();
+    });
+
+    document.getElementById('resetPemasukan').addEventListener('click', resetFormPemasukan);
+    window.editPemasukanRow = (idx) => {
+        let item = dataPemasukan[idx];
+        document.getElementById('tglPemasukan').value = item.tanggal;
+        document.getElementById('namaCustomer').value = item.namaCustomer;
+        document.getElementById('jenisBaju').value = item.jenisBaju;
+        document.getElementById('metodeBayar').value = item.pembayaran;
+        document.getElementById('totalPemasukan').value = item.total;
+        document.getElementById('keteranganPemasukan').value = item.keterangan || '';
+        editIdPemasukan = idx;
+        Swal.fire('Mode Edit', 'Ubah data lalu klik Simpan', 'info');
+    };
+    window.hapusPemasukanRow = (idx) => {
+        Swal.fire({ title:'Hapus?', text:'Data akan dihapus', icon:'warning', showCancelButton:true, confirmButtonColor:'#d33', confirmButtonText:'Ya, hapus!' }).then(res => {
+            if(res.isConfirmed){ dataPemasukan.splice(idx,1); renderPemasukan(); Swal.fire('Terhapus!','','success'); if(editIdPemasukan === idx) resetFormPemasukan(); }
+        });
+    };
+
+    // ========== EVENT OPERASIONAL ==========
+    document.getElementById('simpanOperasional').addEventListener('click', () => {
+        let tanggal = document.getElementById('tglOperasional').value;
+        let jenisBarang = document.getElementById('jenisBarang').value.trim();
+        let jumlah = parseInt(document.getElementById('jumlahBarang').value);
+        let total = parseFloat(document.getElementById('totalOperasional').value);
+
+        if(!tanggal || !jenisBarang || isNaN(jumlah) || isNaN(total) || total <= 0){
+            Swal.fire('Error', 'Isi semua data dengan benar', 'error');
+            return;
+        }
+
+        if(editIdOperasional !== null){
+            dataOperasional[editIdOperasional] = { tanggal, jenisBarang, jumlah, total };
+            editIdOperasional = null;
+            Swal.fire('Sukses', 'Data operasional diubah', 'success');
+        } else {
+            dataOperasional.push({ tanggal, jenisBarang, jumlah, total });
+            Swal.fire('Sukses', 'Data operasional tersimpan', 'success');
+        }
+        renderOperasional();
+        resetFormOperasional();
+    });
+
+    document.getElementById('resetOperasional').addEventListener('click', resetFormOperasional);
+    window.editOperasionalRow = (idx) => {
+        let item = dataOperasional[idx];
+        document.getElementById('tglOperasional').value = item.tanggal;
+        document.getElementById('jenisBarang').value = item.jenisBarang;
+        document.getElementById('jumlahBarang').value = item.jumlah;
+        document.getElementById('totalOperasional').value = item.total;
+        editIdOperasional = idx;
+        Swal.fire('Mode Edit', 'Ubah data lalu Simpan', 'info');
+    };
+    window.hapusOperasionalRow = (idx) => {
+        Swal.fire({ title:'Hapus?', text:'Data operasional akan dihapus', icon:'warning', showCancelButton:true, confirmButtonColor:'#d33', confirmButtonText:'Hapus' }).then(res => {
+            if(res.isConfirmed){ dataOperasional.splice(idx,1); renderOperasional(); Swal.fire('Deleted','','success'); if(editIdOperasional === idx) resetFormOperasional(); }
+        });
+    };
+
+    // ========== EVENT GAJI KARYAWAN ==========
+    document.getElementById('simpanGaji').addEventListener('click', () => {
+        let tanggal = document.getElementById('tglGaji').value;
+        let namaKaryawan = document.getElementById('namaKaryawan').value.trim();
+        let jenisPekerjaan = document.getElementById('jenisPekerjaan').value.trim();
+        let totalGaji = parseFloat(document.getElementById('totalGaji').value);
+
+        if(!tanggal || !namaKaryawan || !jenisPekerjaan || isNaN(totalGaji) || totalGaji <= 0){
+            Swal.fire('Error', 'Lengkapi semua data gaji karyawan', 'error');
+            return;
+        }
+
+        if(editIdGaji !== null){
+            dataGaji[editIdGaji] = { tanggal, namaKaryawan, jenisPekerjaan, totalGaji };
+            editIdGaji = null;
+            Swal.fire('Berhasil', 'Data gaji diupdate', 'success');
+        } else {
+            dataGaji.push({ tanggal, namaKaryawan, jenisPekerjaan, totalGaji });
+            Swal.fire('Berhasil', 'Data gaji tersimpan', 'success');
+        }
+        renderGaji();
+        resetFormGaji();
+    });
+
+    document.getElementById('resetGaji').addEventListener('click', resetFormGaji);
+    window.editGajiRow = (idx) => {
+        let item = dataGaji[idx];
+        document.getElementById('tglGaji').value = item.tanggal;
+        document.getElementById('namaKaryawan').value = item.namaKaryawan;
+        document.getElementById('jenisPekerjaan').value = item.jenisPekerjaan;
+        document.getElementById('totalGaji').value = item.totalGaji;
+        editIdGaji = idx;
+        Swal.fire('Mode Edit', 'Ubah data lalu Simpan', 'info');
+    };
+    window.hapusGajiRow = (idx) => {
+        Swal.fire({ title:'Hapus?', text:'Data gaji akan dihapus', icon:'warning', showCancelButton:true, confirmButtonColor:'#d33', confirmButtonText:'Hapus' }).then(res => {
+            if(res.isConfirmed){ dataGaji.splice(idx,1); renderGaji(); Swal.fire('Terhapus!','','success'); if(editIdGaji === idx) resetFormGaji(); }
+        });
+    };
+
+    // ========== EVENT LABA RUGI ==========
+    document.getElementById('simpanLaba').addEventListener('click', () => {
+        let tanggal = document.getElementById('tglLaporan').value;
+        let pemasukan = getTotalPemasukan();
+        let operasional = getTotalOperasional();
+        let gaji = getTotalGaji();
+        let labaBersih = pemasukan - operasional - gaji;
+        let keterangan = document.getElementById('keteranganLaba').value;
+
+        if(!tanggal){
+            Swal.fire('Error', 'Tanggal harus diisi', 'error');
+            return;
+        }
+
+        dataLabaRugi.push({ tanggal, pemasukan, operasional, gaji, labaBersih, keterangan });
+        renderLabaRugi();
+        document.getElementById('keteranganLaba').value = '';
+        Swal.fire('Tersimpan', 'Laporan laba rugi telah disimpan', 'success');
+    });
+
+    // ========== CETAK PDF ==========
+    document.getElementById('cetakPDF').addEventListener('click', () => {
+        if(dataLabaRugi.length === 0){
+            Swal.fire('Info', 'Tidak ada data laba rugi untuk dicetak', 'info');
+            return;
+        }
+        let element = document.getElementById('tabelLabaRugi');
+        html2pdf().set({ margin: 0.5, filename: 'Laporan_Laba_Rugi.pdf', jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' } }).from(element).save();
+    });
+
+    // ========== EXPORT EXCEL ==========
+    document.getElementById('exportExcel').addEventListener('click', () => {
+        let table = document.getElementById('tabelLabaRugi');
+        let rows = table.querySelectorAll('tr');
+        let excelData = [];
+        for (let row of rows) {
+            let rowData = [];
+            let cols = row.querySelectorAll('th, td');
+            for (let col of cols) {
+                rowData.push(col.innerText.trim());
+            }
+            if (rowData.length > 0) excelData.push(rowData);
+        }
+        if (excelData.length <= 1) {
+            Swal.fire('Info', 'Tidak ada data laba rugi untuk diekspor', 'info');
+            return;
+        }
+        let ws = XLSX.utils.aoa_to_sheet(excelData);
+        let wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Laporan Laba Rugi");
+        XLSX.writeFile(wb, `Laporan_Laba_Rugi_${new Date().toISOString().slice(0,10)}.xlsx`);
+        Swal.fire('Sukses', 'File Excel telah diekspor dari tabel Laporan Laba Rugi', 'success');
+    });
+
+    // ========== NAVIGASI ==========
+    const menuBtns = document.querySelectorAll('.menu-btn');
+    const pages = document.querySelectorAll('.page');
+    menuBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const pageId = btn.getAttribute('data-page');
+            menuBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            pages.forEach(page => page.classList.remove('active-page'));
+            document.getElementById(pageId).classList.add('active-page');
+            renderPemasukan();
+            renderOperasional();
+            renderGaji();
+            renderLabaRugi();
+            updateLabaRugiOtomatis();
+        });
+    });
+
+    // ========== INITIAL LOAD ==========
+    renderPemasukan();
+    renderOperasional();
+    renderGaji();
+    renderLabaRugi();
+    updateLabaRugiOtomatis();
+    resetFormPemasukan();
+    resetFormOperasional();
+    resetFormGaji();
+    document.getElementById('tglLaporan').value = new Date().toISOString().split('T')[0];
+</script>
+</body>
+</html>
